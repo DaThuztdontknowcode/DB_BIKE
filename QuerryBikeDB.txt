@@ -1,0 +1,120 @@
+CREATE SCHEMA AUTH ;
+
+CREATE TABLE AUTH.users (
+    user_id INT PRIMARY KEY,
+    username NVARCHAR(50),
+    password NVARCHAR(50),
+    role NVARCHAR(50),
+    store_id INT NULL,
+    region_id INT NULL
+);
+
+CREATE SCHEMA COM ;
+
+CREATE TABLE COM.stores (
+    store_id INT PRIMARY KEY,
+    store_name NVARCHAR(100),
+    address NVARCHAR(255),
+    region_id INT
+);
+
+CREATE TABLE COM.regions (
+    region_id INT PRIMARY KEY,
+    region_name NVARCHAR(100)
+);
+
+CREATE TABLE COM.sales_reports (
+    report_id INT PRIMARY KEY,
+    store_id INT,
+    region_id INT,
+    report_date DATE,
+    revenue DECIMAL(18, 2),
+    CONSTRAINT FK_stores FOREIGN KEY (store_id) REFERENCES COM.stores(store_id),
+    CONSTRAINT FK_regions FOREIGN KEY (region_id) REFERENCES COM.regions(region_id)
+);
+
+CREATE TABLE COM.access_rights (
+    access_id INT PRIMARY KEY,
+    user_id INT,
+    store_id INT NULL,
+    CONSTRAINT FK_users FOREIGN KEY (user_id) REFERENCES AUTH.users(user_id),
+    CONSTRAINT FK_stores_access FOREIGN KEY (store_id) REFERENCES COM.stores(store_id)
+);
+
+CREATE TABLE COM.region_access (
+    region_access_id INT PRIMARY KEY,
+    user_id INT,
+    region_id INT,
+    CONSTRAINT FK_users_region FOREIGN KEY (user_id) REFERENCES AUTH.users(user_id),
+    CONSTRAINT FK_regions_access FOREIGN KEY (region_id) REFERENCES COM.regions(region_id)
+);
+INSERT INTO COM.regions (region_id, region_name) VALUES
+(1, 'North'),
+(2, 'South'),
+(3, 'East'),
+(4, 'West');
+
+INSERT INTO COM.stores (store_id, store_name, address, region_id) VALUES
+(1, 'Store A', '123 Main St, North City', 1),
+(2, 'Store B', '456 Elm St, South City', 2),
+(3, 'Store C', '789 Oak St, East City', 3),
+(4, 'Store D', '101 Pine St, West City', 4);
+
+INSERT INTO AUTH.users (user_id, username, password, role, store_id, region_id) VALUES
+(1, 'manager1', 'password1', 'store_manager', 1, NULL),
+(2, 'manager2', 'password2', 'store_manager', 2, NULL),
+(3, 'manager3', 'password3', 'store_manager', 3, NULL),
+(4, 'regional_manager1', 'password4', 'regional_manager', NULL, 1),
+(5, 'regional_manager2', 'password5', 'regional_manager', NULL, 2),
+(6, 'admin', 'password6', 'admin', NULL, NULL);
+
+INSERT INTO COM.sales_reports (report_id, store_id, region_id, report_date, revenue) VALUES
+(1, 1, 1, '2024-05-10', 1500.50),
+(2, 2, 2, '2024-05-10', 2200.75),
+(3, 3, 3, '2024-05-10', 1800.25),
+(4, 4, 4, '2024-05-10', 2000.00);
+
+INSERT INTO COM.access_rights (access_id, user_id, store_id) VALUES
+(1, 1, 1),
+(2, 2, 2),
+(3, 3, 3),
+(4, 4, NULL),
+(5, 5, NULL),
+(6, 6, NULL);
+
+INSERT INTO COM.region_access (region_access_id, user_id, region_id) VALUES
+(1, 4, 1),
+(2, 5, 2);
+
+SELECT store_name, address
+FROM COM.stores;
+
+SELECT region_name
+FROM COM.regions;
+
+SELECT username, role
+FROM AUTH.users;
+
+SELECT *
+FROM COM.sales_reports
+WHERE store_id = 1;
+
+SELECT sr.*
+FROM COM.sales_reports sr
+JOIN COM.stores s ON sr.store_id = s.store_id
+JOIN COM.regions r ON s.region_id = r.region_id
+WHERE r.region_name = 'North';
+
+SELECT *
+FROM COM.access_rights
+WHERE user_id = 1;
+
+SELECT *
+FROM COM.region_access
+WHERE user_id = 4;
+
+-- Chèn quyền truy cập cho anh A để xem báo cáo của cửa hàng 1 và cửa hàng 2
+INSERT INTO COM.access_rights (user_id, store_id)
+VALUES
+(1, 1), -- Quyền truy cập cho cửa hàng 1
+(1, 2); -- Quyền truy cập cho cửa hàng 2
